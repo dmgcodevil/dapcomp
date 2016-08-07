@@ -1,5 +1,6 @@
 package framework
 
+// type based on byte slice
 type Payload []byte
 
 func (p Payload) String() string {
@@ -15,18 +16,23 @@ func NewPayload(b []byte) Payload {
 }
 
 type Message struct {
+        senderPID int
         clock   ScalarTime
         payload Payload
 }
 
-func (msg Message) GetClock() ScalarTime {
+func (msg *Message) GetClock() ScalarTime {
         return msg.clock
 }
 
-func (msg Message)GetPayload() Payload {
+func (msg *Message)GetPayload() Payload {
         return msg.payload
 }
 
-func NewMessage(clock ScalarTime, payload Payload) Message {
-        return Message{clock, payload}
+func (msg *Message)SenderPID() int {
+        return msg.senderPID
+}
+
+func NewMessage(senderPID int, clock ScalarTime, payload Payload) *Message {
+        return &Message{senderPID, clock, payload}
 }
