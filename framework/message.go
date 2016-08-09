@@ -17,11 +17,11 @@ func NewPayload(b []byte) Payload {
 
 type Message struct {
         senderPID int
-        clock   ScalarTime
+        clock   Clock
         payload Payload
 }
 
-func (msg *Message) GetClock() ScalarTime {
+func (msg *Message) GetClock() Clock {
         return msg.clock
 }
 
@@ -33,6 +33,6 @@ func (msg *Message)SenderPID() int {
         return msg.senderPID
 }
 
-func NewMessage(senderPID int, clock ScalarTime, payload Payload) *Message {
+func NewMessage(senderPID int, clock Clock, payload Payload) *Message {
         return &Message{senderPID, clock, payload}
 }

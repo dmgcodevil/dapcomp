@@ -26,7 +26,7 @@ var (
 
 type Process struct {
         Pid         int
-        localTime   ScalarTime
+        localTime   Clock
         history     []*Message
         counter     int
         listener    *Listener
@@ -34,7 +34,7 @@ type Process struct {
         started     bool
 }
 
-func (p *Process) LocalTime() ScalarTime {
+func (p *Process) LocalTime() Clock {
         mu.RLock()
         defer mu.RUnlock()
         return p.localTime
@@ -83,7 +83,7 @@ func (p *Process) Start(wg *sync.WaitGroup) {
 }
 
 func (p *Process) SendInternalMessage() {
-        p.localTime = p.localTime.UpdateAndGet()
+        p.localTime = p.localTime.Update(p.Pid)
         p.counter++
         payload := "internal message: " + strconv.Itoa(p.counter)
         msg := NewMessage(p.Pid, p.localTime, NewPayloadString(payload))
@@ -92,7 +92,7 @@ func (p *Process) SendInternalMessage() {
 
 func (p *Process) SendMsg(payload Payload) {
         // R1: update process localTime before send
-        p.localTime = p.localTime.UpdateAndGet()
+        p.localTime = p.localTime.Update(p.Pid)
         msg := NewMessage(p.Pid, p.localTime, payload)
         p.history = append(p.history, msg) // store message in process local storage, only for debug
         p.broadcaster.Send(msg)
@@ -102,7 +102,7 @@ func (p *Process)receive(msg *Message) {
         mu.Lock()
         defer mu.Unlock()
         inClock := msg.GetClock()
-        if ok, updated := p.localTime.Resolve(inClock); ok == true {
+        if updated, ok := p.localTime.UpdateFrom(p.Pid, inClock); ok == true {
                 infoLog.Print(
                         fmt.Sprintf("%s -> Received message. %s", p.String(), clockInfo(p, msg)))
                 p.localTime = updated // update process local clock
@@ -132,6 +132,6 @@ func (p *Process) PrintHistory() {
         infoLog.Println(fmt.Sprintf("%s: Messages", p.String()))
         for _, m := range p.history {
                 c := m.GetClock()
-                infoLog.Println(fmt.Sprintf("%s -> Message[payload: %s, clock: %d", p.String(), m.GetPayload().String(), c.Value()))
+                infoLog.Println(fmt.Sprintf("%s -> Message[payload: %s, clock: %s", p.String(), m.GetPayload().String(), c.String()))
         }
 }
