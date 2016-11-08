@@ -40,9 +40,9 @@ func (p *Process) LocalTime() Clock {
         return p.localTime
 }
 
-func NewProcess(pid int, b *Broadcaster) (p *Process) {
+func NewProcess(pid int, b *Broadcaster, createClock func () Clock) (p *Process) {
         if l, e := b.Listen(pid); e == nil {
-                p = &Process{pid, NewScalarTime(), make([]*Message, 0), 0, l, b, false}
+                p = &Process{pid, createClock(), make([]*Message, 0), 0, l, b, false}
         } else {
                 panic(e)
         }
@@ -92,6 +92,7 @@ func (p *Process) SendInternalMessage() {
 
 func (p *Process) SendMsg(payload Payload) {
         // R1: update process localTime before send
+        infoLog.Print(fmt.Sprintf("process [%d] is sending message", p.Pid))
         p.localTime = p.localTime.Update(p.Pid)
         msg := NewMessage(p.Pid, p.localTime, payload)
         p.history = append(p.history, msg) // store message in process local storage, only for debug
@@ -125,6 +126,10 @@ func (p *Process) deliver(msg *Message) {
 
 func (p *Process) String() string {
         return fmt.Sprintf("Process [%d]", p.Pid)
+}
+
+func (p* Process) PrintClock() {
+        infoLog.Println(fmt.Sprintf("process clock[%d]: %s", p.Pid, p.localTime.String()))
 }
 
 func (p *Process) PrintHistory() {

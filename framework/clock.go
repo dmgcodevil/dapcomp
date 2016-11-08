@@ -18,6 +18,14 @@ func ToScalarTime(c Clock) ScalarTime {
         panic("failed to cast given clock to 'ScalarTime' type")
 }
 
+func ToVectorClock(c Clock) VectorClock {
+        st, ok := c.(VectorClock)
+        if ok {
+                return st
+        }
+        panic("failed to cast given clock to 'VectorClock' type")
+}
+
 // Scalar Time
 type ScalarTime struct {
         clock int
@@ -62,14 +70,30 @@ type VectorClock struct {
 }
 
 func (vc VectorClock) Update(pid int) Clock {
-        return vc;
+        validatePid(pid, vc.size)
+        newClock := make([]int, vc.size)
+        copy(newClock, vc.clock)
+        newClock[pid]++;
+        return VectorClock{vc.size, newClock}
 }
 
 func (vc VectorClock) UpdateFrom(pid int, c Clock) (Clock, bool) {
         clock, ok := c.(VectorClock)
         if ok {
-                println(clock.size) // todo implement
-                return clock, true
+                if (vc.size != clock.size) {
+                        panic("different sizes of clocks")
+                }
+                newClock := make([]int, vc.size)
+                updated := false
+                for i, v := range clock.clock {
+                        if (v > vc.clock[i]) {
+                                newClock[i] = v;
+                                updated = true
+                        } else {
+                                newClock[i] = vc.clock[i];
+                        }
+                }
+                return VectorClock{vc.size, newClock}, updated
         } else {
                 panic("given clock isn't instance of VectorClock struct")
         }
@@ -85,4 +109,10 @@ func (vc VectorClock) String() string {
 
 func NewVectorClock(n int) VectorClock {
         return VectorClock{n, make([]int, n)}
+}
+
+func validatePid(pid int, vcSize int) {
+        if (pid > vcSize - 1) {
+                panic(fmt.Sprintf("given process pid exceeds size of vector clock, expected a number < %d", vcSize))
+        }
 }
