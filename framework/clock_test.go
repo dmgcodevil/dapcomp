@@ -90,10 +90,12 @@ func assertArrayEquals(t *testing.T, expected interface{}, actual interface{}) {
         actualArrType, actualArrayVal, actualArrElemType := arrayTypeInfo(actual)
 
         if (expectedArrType != actualArrType) {
-                t.Errorf("different types of arrays, expected array type = %T, actual = %T", expectedArrType, actualArrType);
+                t.Errorf("different types of arrays, expected array type = %v, actual = %v", expectedArrType, actualArrType);
+                return
         }
         if (expectedArrElemType != actualArrElemType) {
                 t.Errorf("different element types of arrays, expected elem type = %T, actual = %T", expectedArrElemType, actualArrElemType);
+                return
         }
 
         if (expectedArrayVal.Len() != actualArrayVal.Len()) {
